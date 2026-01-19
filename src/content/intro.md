@@ -1,0 +1,1 @@
+This application lets you simulate different slot machine betting strategies to balance risk exposure against the time needed to gather a specific amount of casino reward points. Most of the knowledge used to build this simulation comes from the book `Addiction by Design` by `Natasha Dow Schüll`. **Coin-in** includes all wagers, including recycled winnings.
