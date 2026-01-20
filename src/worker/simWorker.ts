@@ -20,11 +20,13 @@ const VOLATILITY_SETTINGS: Record<Volatility, {
 };
 
 let cancelled = false;
+let lastDownsampledRuns: number[][] | null = null;
+let lastRunCount = 0;
 
 self.onmessage = (event: MessageEvent) => {
   const { type, payload } = event.data as {
-    type: 'simulate' | 'cancel';
-    payload?: { inputs: SimulationInputs };
+    type: 'simulate' | 'cancel' | 'resample';
+    payload?: { inputs?: SimulationInputs; step?: number; sessionId?: string };
   };
 
   if (type === 'cancel') {
@@ -32,17 +34,47 @@ self.onmessage = (event: MessageEvent) => {
     return;
   }
 
+  if (type === 'resample') {
+    if (!lastDownsampledRuns || lastRunCount === 0) {
+      postMessage({
+        type: 'resample_error',
+        payload: { message: 'No trajectory data to resample.', sessionId: payload?.sessionId },
+      });
+      return;
+    }
+
+    const step = Math.max(1, Math.floor(payload?.step ?? 100));
+    const sampleIndices = sampleRunIndices(lastRunCount, step);
+    const sampleTrajectories = sampleIndices.map((idx) => lastDownsampledRuns[idx - 1]);
+    postMessage({
+      type: 'resampled',
+      payload: {
+        samples: sampleTrajectories,
+        sample_run_indices: sampleIndices,
+        step,
+        sessionId: payload?.sessionId,
+      },
+    });
+    return;
+  }
+
   if (type === 'simulate' && payload) {
     cancelled = false;
+    lastDownsampledRuns = null;
+    lastRunCount = 0;
     runSimulation(payload.inputs)
       .then((result) => {
         if (cancelled) {
           postMessage({ type: 'cancelled' });
+          lastDownsampledRuns = null;
+          lastRunCount = 0;
           return;
         }
         postMessage({ type: 'done', payload: { result } });
       })
       .catch((error: Error) => {
+        lastDownsampledRuns = null;
+        lastRunCount = 0;
         postMessage({ type: 'error', payload: { message: error.message } });
       });
   }
@@ -175,6 +207,9 @@ async function runSimulation(inputs: SimulationInputs): Promise<SimulationResult
     worst_run_index: worstRunIndex,
     sample_run_indices: sampleIndices,
   });
+
+  lastDownsampledRuns = downsampledRuns;
+  lastRunCount = inputs.runs;
 
   return {
     schema_version: SCHEMA_VERSION,

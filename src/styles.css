@@ -481,6 +481,47 @@ body {
   margin-top: 10px;
 }
 
+.trajectory-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-slot {
+  flex: 1;
+  min-height: 360px;
+  height: clamp(360px, 55vh, 520px);
+}
+
+.trajectory-sample {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+}
+
+.trajectory-sample input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.trajectory-sample-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.trajectory-sample-ticks .active {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.trajectory-sample-note {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
 .toggle {
   display: inline-flex;
   gap: 6px;

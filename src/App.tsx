@@ -8,6 +8,16 @@ import { formatCurrency, formatCurrencyWithCents, formatPercent } from './utils/
 const TARGET_POINTS = 2500;
 const POINTS_PER_DOLLAR = 1 / 5;
 const COIN_IN_TARGET = TARGET_POINTS / POINTS_PER_DOLLAR;
+const TRAJECTORY_SAMPLE_STEPS = [100, 50, 25, 10, 5] as const;
+
+function estimateSampleCount(totalRuns: number, step: number) {
+  if (totalRuns <= 1) {
+    return totalRuns;
+  }
+  const base = Math.floor(totalRuns / step);
+  const extra = totalRuns % step === 0 ? 0 : 1;
+  return 1 + base + extra;
+}
 
 type NumericInputKey =
   | 'target_points'
@@ -54,8 +64,16 @@ export default function App() {
   const [showSamples, setShowSamples] = useState(true);
   const [showBestWorst, setShowBestWorst] = useState(true);
   const [showTypical, setShowTypical] = useState(true);
+  const [trajectorySampleIndex, setTrajectorySampleIndex] = useState(0);
+  const [resampleSourceId, setResampleSourceId] = useState<string | null>(null);
 
   const workerRef = useRef<Worker | null>(null);
+  const trajectorySampleStepRef = useRef(TRAJECTORY_SAMPLE_STEPS[0]);
+  const resampleSourceIdRef = useRef<string | null>(null);
+
+  const trajectorySampleStep = TRAJECTORY_SAMPLE_STEPS[trajectorySampleIndex];
+  const canResample =
+    !!result && resampleSourceId === result?.meta.id && !running;
 
   useEffect(() => {
     const worker = new Worker(new URL('./worker/simWorker.ts', import.meta.url), {
@@ -65,7 +83,7 @@ export default function App() {
 
     worker.onmessage = (event: MessageEvent) => {
       const { type, payload } = event.data as {
-        type: 'progress' | 'done' | 'cancelled' | 'error';
+        type: 'progress' | 'done' | 'cancelled' | 'error' | 'resampled' | 'resample_error';
         payload?: any;
       };
 
@@ -78,6 +96,14 @@ export default function App() {
         setResult(payload.result as SimulationResult);
         setProgress({ completed: payload.result.inputs.runs, total: payload.result.inputs.runs });
         setError(null);
+        setResampleSourceId(payload.result.meta.id);
+        const step = trajectorySampleStepRef.current;
+        if (step !== TRAJECTORY_SAMPLE_STEPS[0]) {
+          workerRef.current?.postMessage({
+            type: 'resample',
+            payload: { step, sessionId: payload.result.meta.id },
+          });
+        }
       }
 
       if (type === 'cancelled') {
@@ -87,6 +113,34 @@ export default function App() {
       if (type === 'error') {
         setRunning(false);
         setError(payload.message ?? 'Simulation failed.');
+      }
+
+      if (type === 'resampled') {
+        const sessionId = payload.sessionId as string | undefined;
+        if (sessionId && sessionId !== resampleSourceIdRef.current) {
+          return;
+        }
+        setResult((prev) => {
+          if (!prev) {
+            return prev;
+          }
+          return {
+            ...prev,
+            aggregate: {
+              ...prev.aggregate,
+              selected_runs: {
+                ...prev.aggregate.selected_runs,
+                sample_run_indices: payload.sample_run_indices ?? prev.aggregate.selected_runs.sample_run_indices,
+              },
+            },
+            trajectories: {
+              ...prev.trajectories,
+              samples: payload.samples ?? prev.trajectories.samples,
+              sample_run_indices:
+                payload.sample_run_indices ?? prev.trajectories.sample_run_indices,
+            },
+          };
+        });
       }
     };
 
@@ -103,6 +157,14 @@ export default function App() {
   useEffect(() => {
     setRtpDraft(inputs.rtp_percent.toFixed(1));
   }, [inputs.rtp_percent]);
+
+  useEffect(() => {
+    trajectorySampleStepRef.current = trajectorySampleStep;
+  }, [trajectorySampleStep]);
+
+  useEffect(() => {
+    resampleSourceIdRef.current = resampleSourceId;
+  }, [resampleSourceId]);
 
   useEffect(() => {
     setNumericDrafts((prev) => ({
@@ -256,12 +318,26 @@ export default function App() {
     setError(null);
     setRunning(true);
     setResult(null);
+    setResampleSourceId(null);
     setProgress({ completed: 0, total: inputs.runs });
     workerRef.current.postMessage({ type: 'simulate', payload: { inputs } });
   }
 
   function handleCancel() {
     workerRef.current?.postMessage({ type: 'cancel' });
+  }
+
+  function handleTrajectorySampleChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const nextIndex = Number(event.target.value);
+    setTrajectorySampleIndex(nextIndex);
+    const step = TRAJECTORY_SAMPLE_STEPS[nextIndex];
+    if (!workerRef.current || !result || !canResample) {
+      return;
+    }
+    workerRef.current.postMessage({
+      type: 'resample',
+      payload: { step, sessionId: result.meta.id },
+    });
   }
 
   async function refreshSaved() {
@@ -297,6 +373,7 @@ export default function App() {
     });
 
     setResult(savedResult);
+    setResampleSourceId(savedResult.meta.id);
     setSaveName('');
     refreshSaved();
   }
@@ -311,6 +388,7 @@ export default function App() {
     setInputs(normalizedInputs);
     setSaveName(savedSim.name);
     setError(null);
+    setResampleSourceId(null);
   }
 
   async function handleDelete(id: string) {
@@ -362,6 +440,12 @@ export default function App() {
   }
 
   const summary = result?.aggregate;
+  const trajectorySampleCount = useMemo(() => {
+    if (!result) {
+      return 0;
+    }
+    return estimateSampleCount(result.inputs.runs, trajectorySampleStep);
+  }, [result, trajectorySampleStep]);
 
   return (
     <div className="app-shell">
@@ -781,14 +865,16 @@ export default function App() {
       </div>
 
       <div className="chart-stack">
-        <div className="panel">
+        <div className="panel trajectory-panel">
           <div className="section-title chart-header">Trajectory (Net vs Coin-in)</div>
-          <TrajectoryChart
-            result={result}
-            showSamples={showSamples}
-            showBestWorst={showBestWorst}
-            showTypical={showTypical}
-          />
+          <div className="chart-slot">
+            <TrajectoryChart
+              result={result}
+              showSamples={showSamples}
+              showBestWorst={showBestWorst}
+              showTypical={showTypical}
+            />
+          </div>
           <div className="toggle-group">
             <label className="toggle">
               <input
@@ -796,7 +882,7 @@ export default function App() {
                 checked={showSamples}
                 onChange={(event) => setShowSamples(event.target.checked)}
               />
-              Sampled runs (every 100)
+              Sampled runs (every {trajectorySampleStep})
             </label>
             <label className="toggle">
               <input
@@ -814,6 +900,37 @@ export default function App() {
               />
               Typical
             </label>
+          </div>
+          <div className="trajectory-sample">
+            <div className="label-row">
+              <label htmlFor="trajectory-sample">Sample density</label>
+              <span className="label-meta">
+                {result ? `${trajectorySampleCount} lines` : 'Run to enable'}
+              </span>
+            </div>
+            <input
+              id="trajectory-sample"
+              type="range"
+              min={0}
+              max={TRAJECTORY_SAMPLE_STEPS.length - 1}
+              step={1}
+              value={trajectorySampleIndex}
+              onChange={handleTrajectorySampleChange}
+              disabled={!canResample}
+            />
+            <div className="trajectory-sample-ticks">
+              {TRAJECTORY_SAMPLE_STEPS.map((step, index) => (
+                <span
+                  key={step}
+                  className={index === trajectorySampleIndex ? 'active' : undefined}
+                >
+                  {step}
+                </span>
+              ))}
+            </div>
+            <div className="trajectory-sample-note">
+              Every {trajectorySampleStep} runs
+            </div>
           </div>
         </div>
 
