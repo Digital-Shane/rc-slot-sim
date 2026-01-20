@@ -4,6 +4,8 @@ import HistogramChart from './components/HistogramChart';
 import { db, SavedSimulation } from './db';
 import { SimulationInputs, SimulationResult, Volatility } from './sim/types';
 import { formatCurrency, formatCurrencyWithCents, formatPercent } from './utils/format';
+import ReactMarkdown from 'react-markdown';
+import industryMarkdown from './content/gamblingIndustryText.md?raw';
 
 const TARGET_POINTS = 2500;
 const POINTS_PER_DOLLAR = 1 / 5;
@@ -39,7 +41,7 @@ const DEFAULT_INPUTS: SimulationInputs = {
   runs: 1000,
   seed: null,
   spins_per_sec: 0.1,
-  traj_points: 300,
+  traj_points: 200,
 };
 
 export default function App() {
@@ -448,20 +450,18 @@ export default function App() {
   }, [result, trajectorySampleStep]);
 
   return (
-    <div className="app-shell">
-      <div className="panel controls fade-in">
-        <h1 className="title">RC Casino Points Simulator</h1>
-        <p className="note">
-          Simulate runs to reach {inputs.target_points.toLocaleString()} RC points
-          ({formatCurrency(inputs.coin_in_target)} in coin-in).
-        </p>
-        <p className="note">
-          Coin-in includes all wagers, including recycled winnings. Cash-in tracks the money
-          added when the balance hits $0.
-        </p>
+    <div className="app-page">
+      <div className="panel app-header fade-in">
+        <h1 className="app-title">Royal Caribbean Casino Points Simulator</h1>
+        <div className="app-intro">
+          <ReactMarkdown>{industryMarkdown}</ReactMarkdown>
+        </div>
+      </div>
 
-        <div className="section-block">
-          <div className="section-title">Simulation inputs</div>
+      <div className="app-shell">
+        <div className="panel controls fade-in">
+          <div className="section-block">
+          <div className="section-title">Simulation Inputs</div>
 
           <div className="input-row">
             <div className="label-row">
@@ -647,6 +647,41 @@ export default function App() {
             </div>
           </div>
 
+          <div className="input-row">
+            <div className="label-row">
+              <label htmlFor="spins-per-sec">Spins per second</label>
+              <span
+                className="info-tip"
+                data-tooltip={`Used for time estimates. Minutes/run: ${minutesPerRun.toFixed(1)}.`}
+                aria-label="Spins per second info"
+                tabIndex={0}
+              >
+                i
+              </span>
+              <span className="label-meta">0.01-30</span>
+            </div>
+            <input
+              id="spins-per-sec"
+              type="text"
+              inputMode="decimal"
+              value={numericDrafts.spins_per_sec}
+              onChange={(event) =>
+                handleNumericDraftChange('spins_per_sec', event.target.value)
+              }
+              onFocus={() => setActiveDraft('spins_per_sec')}
+              onBlur={() => {
+                commitNumericDraft('spins_per_sec');
+                setActiveDraft(null);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  commitNumericDraft('spins_per_sec');
+                  setActiveDraft(null);
+                }
+              }}
+            />
+          </div>
+
           <details className="advanced-section">
             <summary className="advanced-summary">
               Advanced
@@ -701,40 +736,6 @@ export default function App() {
                 type="text"
                 value={inputs.seed ?? ''}
                 onChange={(event) => updateInput('seed', event.target.value || null)}
-              />
-            </div>
-            <div className="input-row">
-              <div className="label-row">
-                <label htmlFor="spins-per-sec">Spins per second</label>
-                <span
-                  className="info-tip"
-                  data-tooltip={`Used for time estimates. Minutes/run: ${minutesPerRun.toFixed(1)}.`}
-                  aria-label="Spins per second info"
-                  tabIndex={0}
-                >
-                  i
-                </span>
-                <span className="label-meta">0.01-30</span>
-              </div>
-              <input
-                id="spins-per-sec"
-                type="text"
-                inputMode="decimal"
-                value={numericDrafts.spins_per_sec}
-                onChange={(event) =>
-                  handleNumericDraftChange('spins_per_sec', event.target.value)
-                }
-                onFocus={() => setActiveDraft('spins_per_sec')}
-                onBlur={() => {
-                  commitNumericDraft('spins_per_sec');
-                  setActiveDraft(null);
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    commitNumericDraft('spins_per_sec');
-                    setActiveDraft(null);
-                  }
-                }}
               />
             </div>
             <div className="input-row">
@@ -1090,11 +1091,11 @@ export default function App() {
                   </div>
                   <div>
                     <div className="metric-label">
-                      <span>Median spins/run</span>
+                      <span>Spins/Run</span>
                       <span
                         className="info-tip"
-                        data-tooltip="Median number of spins needed to reach the coin-in target."
-                        aria-label="Median spins per run info"
+                        data-tooltip="Number of spins needed to reach the coin-in target."
+                        aria-label="Spins per run info"
                         tabIndex={0}
                       >
                         i
@@ -1214,18 +1215,11 @@ export default function App() {
                 RTP
                 <strong>{result.inputs.rtp_percent.toFixed(1)}%</strong>
               </div>
-              <div>
-                Typical spins/run
-                <strong>{spinsPerRun}</strong>
-              </div>
-              <div>
-                Time estimate/run
-                <strong>{formatDuration(spinsPerRun / Math.max(0.01, resultSpinRatePerSec) / 60)}</strong>
-              </div>
             </div>
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }
