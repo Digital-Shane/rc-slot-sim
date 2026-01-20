@@ -9,6 +9,15 @@ const TARGET_POINTS = 2500;
 const POINTS_PER_DOLLAR = 1 / 5;
 const COIN_IN_TARGET = TARGET_POINTS / POINTS_PER_DOLLAR;
 
+type NumericInputKey =
+  | 'target_points'
+  | 'bet_size'
+  | 'deposit_amount'
+  | 'runs'
+  | 'spins_per_sec'
+  | 'traj_points';
+type NumericDrafts = Record<NumericInputKey, string>;
+
 const DEFAULT_INPUTS: SimulationInputs = {
   rtp_percent: 88.0,
   volatility: 'HIGH',
@@ -32,6 +41,15 @@ export default function App() {
   const [saveName, setSaveName] = useState('');
   const [saved, setSaved] = useState<SavedSimulation[]>([]);
   const [rtpDraft, setRtpDraft] = useState(inputs.rtp_percent.toFixed(1));
+  const [numericDrafts, setNumericDrafts] = useState<NumericDrafts>(() => ({
+    target_points: String(inputs.target_points),
+    bet_size: String(inputs.bet_size),
+    deposit_amount: String(inputs.deposit_amount),
+    runs: String(inputs.runs),
+    spins_per_sec: String(inputs.spins_per_sec),
+    traj_points: String(inputs.traj_points),
+  }));
+  const [activeDraft, setActiveDraft] = useState<NumericInputKey | null>(null);
 
   const [showSamples, setShowSamples] = useState(true);
   const [showBestWorst, setShowBestWorst] = useState(true);
@@ -85,6 +103,32 @@ export default function App() {
   useEffect(() => {
     setRtpDraft(inputs.rtp_percent.toFixed(1));
   }, [inputs.rtp_percent]);
+
+  useEffect(() => {
+    setNumericDrafts((prev) => ({
+      ...prev,
+      ...(activeDraft !== 'target_points'
+        ? { target_points: String(inputs.target_points) }
+        : {}),
+      ...(activeDraft !== 'bet_size' ? { bet_size: String(inputs.bet_size) } : {}),
+      ...(activeDraft !== 'deposit_amount'
+        ? { deposit_amount: String(inputs.deposit_amount) }
+        : {}),
+      ...(activeDraft !== 'runs' ? { runs: String(inputs.runs) } : {}),
+      ...(activeDraft !== 'spins_per_sec'
+        ? { spins_per_sec: String(inputs.spins_per_sec) }
+        : {}),
+      ...(activeDraft !== 'traj_points' ? { traj_points: String(inputs.traj_points) } : {}),
+    }));
+  }, [
+    inputs.target_points,
+    inputs.bet_size,
+    inputs.deposit_amount,
+    inputs.runs,
+    inputs.spins_per_sec,
+    inputs.traj_points,
+    activeDraft,
+  ]);
 
   const spinsPerRun = useMemo(() => {
     const betCents = Math.round(inputs.bet_size * 100);
@@ -163,6 +207,36 @@ export default function App() {
       }
       return next;
     });
+  }
+
+  function parseNumericDraft(value: string): number | null {
+    const trimmed = value.trim();
+    if (trimmed === '' || trimmed === '.' || trimmed === '-' || trimmed === '+') {
+      return null;
+    }
+    const parsed = Number(trimmed);
+    if (!Number.isFinite(parsed)) {
+      return null;
+    }
+    return parsed;
+  }
+
+  function handleNumericDraftChange(key: NumericInputKey, value: string) {
+    setNumericDrafts((prev) => ({ ...prev, [key]: value }));
+    const parsed = parseNumericDraft(value);
+    if (parsed === null) {
+      return;
+    }
+    updateInput(key, parsed as SimulationInputs[typeof key]);
+  }
+
+  function commitNumericDraft(key: NumericInputKey) {
+    const parsed = parseNumericDraft(numericDrafts[key]);
+    if (parsed === null) {
+      setNumericDrafts((prev) => ({ ...prev, [key]: String(inputs[key]) }));
+      return;
+    }
+    updateInput(key, parsed as SimulationInputs[typeof key]);
   }
 
   function commitRtpDraft() {
@@ -364,12 +438,23 @@ export default function App() {
             <div className="input-inline">
               <input
                 id="target-points"
-                type="number"
-                min={100}
-                max={250000}
-                step={100}
-                value={inputs.target_points}
-                onChange={(event) => updateInput('target_points', Number(event.target.value))}
+                type="text"
+                inputMode="numeric"
+                value={numericDrafts.target_points}
+                onChange={(event) =>
+                  handleNumericDraftChange('target_points', event.target.value)
+                }
+                onFocus={() => setActiveDraft('target_points')}
+                onBlur={() => {
+                  commitNumericDraft('target_points');
+                  setActiveDraft(null);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    commitNumericDraft('target_points');
+                    setActiveDraft(null);
+                  }
+                }}
               />
               <span className="input-meta">
                 Coin-in {formatCurrency(inputs.coin_in_target)}
@@ -421,12 +506,21 @@ export default function App() {
               <span className="input-addon">$</span>
               <input
                 id="bet-size"
-                type="number"
-                min={0.25}
-                max={1000}
-                step={0.25}
-                value={inputs.bet_size}
-                onChange={(event) => updateInput('bet_size', Number(event.target.value))}
+                type="text"
+                inputMode="decimal"
+                value={numericDrafts.bet_size}
+                onChange={(event) => handleNumericDraftChange('bet_size', event.target.value)}
+                onFocus={() => setActiveDraft('bet_size')}
+                onBlur={() => {
+                  commitNumericDraft('bet_size');
+                  setActiveDraft(null);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    commitNumericDraft('bet_size');
+                    setActiveDraft(null);
+                  }
+                }}
               />
             </div>
           </div>
@@ -448,12 +542,23 @@ export default function App() {
               <span className="input-addon">$</span>
               <input
                 id="deposit-amount"
-                type="number"
-                min={20}
-                max={50000}
-                step={1}
-                value={inputs.deposit_amount}
-                onChange={(event) => updateInput('deposit_amount', Number(event.target.value))}
+                type="text"
+                inputMode="decimal"
+                value={numericDrafts.deposit_amount}
+                onChange={(event) =>
+                  handleNumericDraftChange('deposit_amount', event.target.value)
+                }
+                onFocus={() => setActiveDraft('deposit_amount')}
+                onBlur={() => {
+                  commitNumericDraft('deposit_amount');
+                  setActiveDraft(null);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    commitNumericDraft('deposit_amount');
+                    setActiveDraft(null);
+                  }
+                }}
               />
             </div>
           </div>
@@ -478,12 +583,21 @@ export default function App() {
               </div>
               <input
                 id="runs"
-                type="number"
-                min={100}
-                max={100000}
-                step={100}
-                value={inputs.runs}
-                onChange={(event) => updateInput('runs', Number(event.target.value))}
+                type="text"
+                inputMode="numeric"
+                value={numericDrafts.runs}
+                onChange={(event) => handleNumericDraftChange('runs', event.target.value)}
+                onFocus={() => setActiveDraft('runs')}
+                onBlur={() => {
+                  commitNumericDraft('runs');
+                  setActiveDraft(null);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    commitNumericDraft('runs');
+                    setActiveDraft(null);
+                  }
+                }}
               />
             </div>
             <div className="input-row">
@@ -520,12 +634,23 @@ export default function App() {
               </div>
               <input
                 id="spins-per-sec"
-                type="number"
-                min={0.01}
-                max={30}
-                step={0.01}
-                value={inputs.spins_per_sec}
-                onChange={(event) => updateInput('spins_per_sec', Number(event.target.value))}
+                type="text"
+                inputMode="decimal"
+                value={numericDrafts.spins_per_sec}
+                onChange={(event) =>
+                  handleNumericDraftChange('spins_per_sec', event.target.value)
+                }
+                onFocus={() => setActiveDraft('spins_per_sec')}
+                onBlur={() => {
+                  commitNumericDraft('spins_per_sec');
+                  setActiveDraft(null);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    commitNumericDraft('spins_per_sec');
+                    setActiveDraft(null);
+                  }
+                }}
               />
             </div>
             <div className="input-row">
@@ -543,12 +668,23 @@ export default function App() {
               </div>
               <input
                 id="traj-points"
-                type="number"
-                min={100}
-                max={1000}
-                step={10}
-                value={inputs.traj_points}
-                onChange={(event) => updateInput('traj_points', Number(event.target.value))}
+                type="text"
+                inputMode="numeric"
+                value={numericDrafts.traj_points}
+                onChange={(event) =>
+                  handleNumericDraftChange('traj_points', event.target.value)
+                }
+                onFocus={() => setActiveDraft('traj_points')}
+                onBlur={() => {
+                  commitNumericDraft('traj_points');
+                  setActiveDraft(null);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    commitNumericDraft('traj_points');
+                    setActiveDraft(null);
+                  }
+                }}
               />
             </div>
           </details>
