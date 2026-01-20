@@ -126,6 +126,12 @@ export default function TrajectoryChart({
     return series;
   }, [result, showSamples, showBestWorst, showTypical]);
 
+  const legendData = useMemo(() => {
+    return seriesData
+      .map((s) => (typeof s.name === 'string' ? s.name : undefined))
+      .filter((name) => name && name !== 'Break-even') as string[];
+  }, [seriesData]);
+
   useEffect(() => {
     const chart = chartRef.current;
     if (!chart) {
@@ -150,6 +156,17 @@ export default function TrajectoryChart({
 
     chart.clear();
 
+    const chartHeight = chart.getHeight ? chart.getHeight() : 0;
+    const resolvedChartHeight = chartHeight > 0 ? chartHeight : 480;
+    const legendMaxHeight = Math.max(240, resolvedChartHeight - 20);
+    const legendRowHeight = 30;
+    const legendPadding = 24;
+    const maxLegendItems = Math.max(
+      6,
+      Math.floor((legendMaxHeight - legendPadding) / legendRowHeight)
+    );
+    const usePagedLegend = legendData.length > maxLegendItems;
+
     chart.setOption({
       animation: false,
       title: undefined,
@@ -165,7 +182,7 @@ export default function TrajectoryChart({
         },
       },
       legend: {
-        type: 'plain',
+        type: usePagedLegend ? 'scroll' : 'plain',
         orient: 'vertical',
         right: 10,
         top: 10,
@@ -175,9 +192,13 @@ export default function TrajectoryChart({
         itemWidth: 12,
         itemHeight: 10,
         textStyle: { fontSize: 12, lineHeight: 18 },
-        data: seriesData
-          .map((s) => (typeof s.name === 'string' ? s.name : undefined))
-          .filter((name) => name && name !== 'Break-even') as string[],
+        ...(usePagedLegend
+          ? {
+              height: legendMaxHeight,
+              pageFormatter: '{current}/{total}',
+            }
+          : {}),
+        data: legendData,
       },
       grid: { left: 60, right: 260, top: 40, bottom: 60, containLabel: true },
       xAxis: {
@@ -201,7 +222,7 @@ export default function TrajectoryChart({
       },
       series: seriesData,
     });
-  }, [result, seriesData]);
+  }, [result, seriesData, legendData]);
 
   return <div ref={containerRef} className="chart" />;
 }
