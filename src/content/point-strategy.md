@@ -28,3 +28,24 @@ On any free cruises taken the goal is to maintain high value player status while
 * Aim for 100-250 points total
 * 1-2 trips per cruise, spreading out play
 * Ensure that each cruise has at least one day of meaningful tracked play
+
+#### Cost Documentation
+
+I was able to score a cheaper 6 day cruise because I bet a small amount of money in the casino experimenting with the
+machines at the start of this year. The flight ended up adding the most to my trip, but the budget airlines only had overnight
+trips that I would not tolerate. This could have been done cheaper. Especially by not buying the drink package. I also need
+to pay for dog sitting. It's hard to count all these expenses against this project, because I'll also be enjoying 6 days in
+Mexico drinking as much as I want.
+
+I was able to get a cheaper 6 day cruise by betting a small amount in the casino while experimenting with the machines earlier this year.
+The flight ended up being the biggest added cost, since the budget airlines only offered overnight trips that I wasn’t willing to take.
+This could have been done more cheaply, especially if I had skipped the drink package. I also need to pay for dog sitting. It’s hard to count all of these expenses against the project, since I’ll also be enjoying six days in Mexico with unlimited drinks.
+
+| Expense       | Amount  |
+| ------------- | ------- |
+| Cruise        |  667.70 |
+| Flight        |  738.55 |
+| Hotel         |  123.12 |
+| Dog Sitting   |  400.00 |
+| Drink Package |  395.92 |
+| Total	        | 2325.29 |
