@@ -31,15 +31,16 @@ On any free cruises taken the goal is to maintain high value player status while
 
 #### Cost Documentation
 
-I was able to score a cheaper 6 day cruise because I bet a small amount of money in the casino experimenting with the
-machines at the start of this year. The flight ended up adding the most to my trip, but the budget airlines only had overnight
-trips that I would not tolerate. This could have been done cheaper. Especially by not buying the drink package. I also need
-to pay for dog sitting. It's hard to count all these expenses against this project, because I'll also be enjoying 6 days in
-Mexico drinking as much as I want.
+At the start of 2026 I went on a cruise with my family. During that time I read `Addition By Design` and my interest in
+attempting to game the industry metrics was peaked. I bet a small amount of money in the casino experimenting with the machines. 
+I managed to get lucky and achieved 800 casino points for around $100 out of pocket. From that I received **four** discounted cruise
+offers. Each offer was for a free cruise with a discounted guest. Two offers had ocean view rooms (no balcony). Negatives were the
+largest ship was the Quantum of the Seas, sailings only through May, and I had to redeem within a month.
 
-I was able to get a cheaper 6 day cruise by betting a small amount in the casino while experimenting with the machines earlier this year.
-The flight ended up being the biggest added cost, since the budget airlines only offered overnight trips that I wasn’t willing to take.
-This could have been done more cheaply, especially if I had skipped the drink package. I also need to pay for dog sitting. It’s hard to count all of these expenses against the project, since I’ll also be enjoying six days in Mexico with unlimited drinks.
+I decided to use one of these trips to give my strategy a serious test by hitting the 2500 point mark for prime status. I chose a 6 day
+cruise from LA to Mexico. The flight ended up adding the most to my trip, but the budget airlines only had overnight trips that I
+would not tolerate. This could have been done cheaper. Especially by not buying the drink package. I also need to pay for dog sitting.
+It's hard to count all these expenses against this project, because I'll also be enjoying 6 days in Mexico with drinks.
 
 | Expense       | Amount  |
 | ------------- | ------- |
