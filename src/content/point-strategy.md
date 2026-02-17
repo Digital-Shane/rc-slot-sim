@@ -37,7 +37,8 @@ I managed to get lucky and achieved 800 casino points for around $100 out of poc
 offers. Each offer was for a free cruise with a discounted guest. Two offers had ocean view rooms (no balcony). Negatives were the
 largest ship was the Quantum of the Seas, sailings only through May, and I had to redeem within a month.
 
-I decided to use one of these trips to give my strategy a serious test by hitting the 2500 point mark for prime status. I chose a 6 day
+I decided to use one of these trips to give my strategy a serious test by hitting the 2500 point mark for prime status.
+At this level offers are typically for balcony rooms instead of interior. I chose a 6 day
 cruise from LA to Mexico. The flight ended up adding the most to my trip, but the budget airlines only had overnight trips that I
 would not tolerate. This could have been done cheaper. Especially by not buying the drink package. I also need to pay for dog sitting.
 It's hard to count all these expenses against this project, because I'll also be enjoying 6 days in Mexico with drinks.
