@@ -14,4 +14,26 @@ A new visit usually “resets” recency back to the best range, but some system
 How often you show up and generate rated play within a given window (last 30/90/180/365 days). More distinct visits are better, but a “visit” usually means a trip or day with meaningful tracked play, not just spending free play or very small amounts. Frequency systems use rolling windows. The casino sets a timeframe, and as earlier trips age out of the window, your frequency score declines. Frequency also factors in active days within a trip. One day of play versus three separate days can matter.
 
 #### Monetary Score
-How much theoretical value you generate. Calculated using `coin-in × (1 - return-to-player)`. Tracked as Average Daily Theo (ADT) and Average Trip Theo. Marketing models care about averages, not just totals. If you spread a fixed amount of play across more days, your daily average can drop, even if total coin-in is the same.
+This is the most critical metric because it reflects the theoretical revenue value a player generates for the casino. Casinos do not evaluate players purely on how much they win or lose in actual outcomes; instead, they evaluate them based on theoretical loss (“theo”) which is the statistically expected amount the casino should earn from that player’s play over time.
+
+Theoretical loss (Theo) is calculated using: `coin-in × (1 - return-to-player)`
+
+For example, if a player cycles $50,000 through a slot machine with a 90% RTP, their theoretical loss is $5,000 regardless of whether they actually won or lost during that trip. This creates a standardized way to measure value across all players, games, and outcomes.
+
+The Monetary Score is composed of two primary averages Average Daily Theo (ADT) and Average Trip Theo.
+
+##### Average Daily Theo (ADT)
+
+ADT measures the average theoretical loss per gaming day.
+
+If a player generates $6,000 in total theoretical loss over 3 rated gaming days, their ADT is: `$6,000 ÷ 3 days = $2,000 ADT`
+
+ADT is heavily used in marketing and comp models because it reflects daily worth. Casinos make reinvestment decisions (free play, rooms, food, airfare) based on what they expect you to generate per day, not just per trip. Spreading the same total play over more days lowers ADT while Compressing play into fewer days increases ADT. Two players with identical total theo can have very different ADT values depending on trip length.
+
+For example, player A spends $6,000 theo over 3 days for $2,000 ADT, and player B spends $6,000 theo over 6 days equalling $1,000 ADT. Even though total value is identical, Player A is viewed as twice as valuable per day.
+
+##### Average Trip Theo
+
+Average Trip Theo measures the average total theoretical loss per trip, regardless of number of days. If a player makes 4 trips and generates $5,000, $6,000, $4,000, and $5,000 in theo, their Average Trip Theo is: ($5,000 + $6,000 + $4,000 + $5,000) ÷ 4 trips = $5,000 per trip
+
+This metric helps casinos understand trip-level worth and plan larger reinvestment offers such as weekend packages, airfare, or premium event invitations.
