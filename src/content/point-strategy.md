@@ -33,7 +33,7 @@ On any free cruises taken the goal is to maintain high value player status while
 
 At the start of 2026 I went on a cruise with my family. During that time I read `Addition By Design` and my interest in
 attempting to game the industry metrics was peaked. I bet a small amount of money in the casino experimenting with the machines. 
-I managed to get lucky and achieved 800 casino points for around $100 out of pocket. From that I received **ten** discounted cruise
+I managed to get lucky and achieved 800 casino points for around $100 out of pocket. From that I received **twelve** discounted cruise
 offers. Each offer was for a free cruise with a discounted guest. Two offers had ocean view rooms (no balcony). Negatives were the
 largest ship was the Quantum of the Seas, sailings only through May, and I had to redeem within a month.
 
