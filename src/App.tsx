@@ -343,7 +343,7 @@ export default function App() {
     if (parsed === null || parsed <= 0) {
       return;
     }
-    updateInput('points_per_dollar', Number((1 / parsed).toFixed(6)));
+    updateInput('points_per_dollar', 1 / parsed);
   }
 
   function commitCoinInPerPointDraft() {
@@ -352,7 +352,7 @@ export default function App() {
       setCoinInPerPointDraft(String(1 / inputs.points_per_dollar));
       return;
     }
-    updateInput('points_per_dollar', Number((1 / parsed).toFixed(6)));
+    updateInput('points_per_dollar', 1 / parsed);
     setCoinInPerPointDraft(String(parsed));
   }
 
@@ -565,7 +565,7 @@ export default function App() {
           <div className="input-row">
             <div className="label-row">
               <label htmlFor="target-points">Target RC points</label>
-              <InfoTip label="Target points info" text="RC awards 1 point per $5 coin-in. Reward tiers: Prime at 2,500, Signature at 25,000, Masters at 100,000+." />
+              <InfoTip label="Target points info" text="Slots award 1 point per $5 coin-in; video poker awards 1 per $15 coin-in. Reward tiers: Prime at 2,500, Signature at 25,000, Masters at 100,000+." />
               <span className="label-meta">100-250,000</span>
             </div>
             <div className="input-inline">
@@ -718,8 +718,8 @@ export default function App() {
             <div className="input-row">
               <div className="label-row">
                 <label htmlFor="coin-in-per-point">Coin-in per RC point</label>
-                <InfoTip label="Coin-in per RC point info" text="Slots award 1 RC point per $5 coin-in. Video poker awards 1 RC point per $10 coin-in." />
-                <span className="label-meta">5-10</span>
+                <InfoTip label="Coin-in per RC point info" text="Slots award 1 RC point per $5 coin-in. Video poker awards 1 RC point per $15 coin-in." />
+                <span className="label-meta">5-15</span>
               </div>
               <input
                 id="coin-in-per-point"
