@@ -41,7 +41,7 @@ self.onmessage = (event: MessageEvent) => {
 
     const step = Math.max(1, Math.floor(payload?.step ?? 100));
     const sampleIndices = sampleRunIndices(lastRunCount, step);
-    const sampleTrajectories = sampleIndices.map((idx) => lastDownsampledRuns[idx - 1]);
+    const sampleTrajectories = sampleIndices.map((idx) => lastDownsampledRuns![idx - 1]);
     postMessage({
       type: 'resampled',
       payload: {
@@ -58,7 +58,7 @@ self.onmessage = (event: MessageEvent) => {
     cancelled = false;
     lastDownsampledRuns = null;
     lastRunCount = 0;
-    runSimulation(payload.inputs)
+    runSimulation(payload.inputs!)
       .then((result) => {
         if (cancelled) {
           postMessage({ type: 'cancelled' });

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import * as echarts from 'echarts';
+import { useChartSize } from './useChartSize';
 import { SimulationResult } from '../sim/types';
 import { formatCurrency } from '../utils/format';
 
@@ -18,6 +19,7 @@ export default function TrajectoryChart({
 }: TrajectoryChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<echarts.EChartsType | null>(null);
+  const narrow = useChartSize(containerRef, chartRef);
 
   useEffect(() => {
     if (!containerRef.current) {
@@ -120,8 +122,7 @@ export default function TrajectoryChart({
       lineStyle: { type: 'dashed', color: '#94a3b8', width: 1.5 },
       tooltip: { show: false },
       silent: true,
-      selected: { 'Break-even': false },
-    });
+          });
 
     return series;
   }, [result, showSamples, showBestWorst, showTypical]);
@@ -145,7 +146,7 @@ export default function TrajectoryChart({
           text: 'Run a simulation to see trajectories',
           left: 'center',
           top: 'middle',
-          textStyle: { color: '#7a7065', fontSize: 14 },
+          textStyle: { color: '#536b7e', fontSize: narrow ? 11 : 13 },
         },
         xAxis: { show: false },
         yAxis: { show: false },
@@ -172,6 +173,7 @@ export default function TrajectoryChart({
       title: undefined,
       tooltip: {
         trigger: 'axis',
+        confine: true,
         axisPointer: { type: 'cross' },
         formatter: (params: any) => {
           const rows = params
@@ -182,28 +184,33 @@ export default function TrajectoryChart({
         },
       },
       legend: {
-        type: usePagedLegend ? 'scroll' : 'plain',
-        orient: 'vertical',
-        right: 10,
-        top: 10,
+        type: narrow || usePagedLegend ? 'scroll' : 'plain',
+        orient: narrow ? 'horizontal' : 'vertical',
+        right: narrow ? 0 : 10,
+        top: narrow ? undefined : 10,
+        bottom: narrow ? 0 : undefined,
+        left: narrow ? 0 : undefined,
         padding: [12, 12],
-        width: 180,
+        width: narrow ? undefined : 180,
         itemGap: 12,
         itemWidth: 12,
         itemHeight: 10,
         textStyle: { fontSize: 12, lineHeight: 18 },
-        ...(usePagedLegend
+        ...(!narrow && usePagedLegend
           ? {
               height: legendMaxHeight,
               pageFormatter: '{current}/{total}',
             }
           : {}),
         data: legendData,
+        formatter: narrow ? (name: string) => name.replace(/\s\(.*/, '') : undefined,
       },
-      grid: { left: 60, right: 260, top: 40, bottom: 60, containLabel: true },
+      grid: { left: narrow ? 8 : 40, right: narrow ? 16 : 220, top: 30, bottom: narrow ? 85 : 60, containLabel: true },
       xAxis: {
         type: 'value',
         name: 'Coin-in ($)',
+        nameLocation: 'middle',
+        splitNumber: narrow ? 3 : 5,
         min: 0,
         max: result?.inputs.coin_in_target ?? undefined,
         nameGap: 30,
@@ -222,7 +229,7 @@ export default function TrajectoryChart({
       },
       series: seriesData,
     });
-  }, [result, seriesData, legendData]);
+  }, [result, seriesData, legendData, narrow]);
 
   return <div ref={containerRef} className="chart" />;
 }

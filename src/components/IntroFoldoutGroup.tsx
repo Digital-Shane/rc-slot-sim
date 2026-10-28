@@ -1,83 +1,75 @@
-import { Fragment, useState } from 'react';
+import { Fragment, useLayoutEffect, useId, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import VolatilityBucketCharts from './VolatilityBucketCharts';
 
-type IntroFoldoutItem = {
-  title: string;
-  markdown: string;
-};
+type IntroFoldoutItem = { title: string; summary?: string; markdown: string };
+type IntroFoldoutGroupProps = { items: IntroFoldoutItem[]; className?: string };
 
-type IntroFoldoutGroupProps = {
-  items: IntroFoldoutItem[];
-  className?: string;
-};
-
+/** A native modal gives long Markdown articles their own scroll area and focus scope. */
 export default function IntroFoldoutGroup({ items, className }: IntroFoldoutGroupProps) {
-  const sanitized = items
-    .map((item) => ({ ...item, markdown: item.markdown.trim() }))
-    .filter((item) => item.markdown.length > 0);
+  const sanitized = items.filter((item) => item.markdown.trim().length > 0);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
-
-  if (sanitized.length === 0) {
-    return null;
-  }
-
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
   const activeItem = activeIndex === null ? null : sanitized[activeIndex];
-  const graphPlaceholder = 'VOLATILITY_GRAPHS';
 
-  const groupClassName = [
-    'intro-tab-group',
-    activeItem ? 'is-open' : '',
-    className ?? '',
-  ]
-    .filter(Boolean)
-    .join(' ');
+  useLayoutEffect(() => {
+    const dialog = dialogRef.current;
+    if (activeItem && dialog && !dialog.open) {
+      dialog.showModal();
+      dialog.querySelector('.reference-body')?.scrollTo({ top: 0, behavior: 'instant' });
+    }
+  }, [activeItem]);
 
+  if (!sanitized.length) return null;
+  const parts = activeItem?.markdown.split('VOLATILITY_GRAPHS') ?? [];
   return (
-    <div className={groupClassName}>
-      <div className="intro-tabs">
-        {sanitized.map((item, index) => {
-          const isActive = index === activeIndex;
-          return (
-            <button
-              key={item.title}
-              type="button"
-              className={`intro-tab${isActive ? ' is-active' : ''}`}
-              aria-expanded={isActive}
-              onClick={() => setActiveIndex(isActive ? null : index)}
-            >
-              <span className="intro-tab-title">
-                <span className="intro-tab-icon" aria-hidden="true" />
-                {item.title}
-              </span>
-              <span className="intro-tab-caret" aria-hidden="true">
-                {isActive ? '⌄' : '›'}
-              </span>
-            </button>
-          );
-        })}
+    <div className={['reference-library', className].filter(Boolean).join(' ')}>
+      <div className="reference-cards">
+        {sanitized.map((item, index) => (
+          <button key={item.title} type="button" className="reference-card"
+            aria-haspopup="dialog" onClick={() => setActiveIndex(index)}>
+            <span className="reference-number" aria-hidden="true">{index + 1}.</span>
+            <span className="reference-copy"><strong>{item.title}</strong><span>{item.summary}</span></span>
+            <span className="reference-arrow" aria-hidden="true">+</span>
+          </button>
+        ))}
       </div>
-      {activeItem ? (
-        <div className="intro-tab-panel">
-          {activeItem.markdown.includes(graphPlaceholder) ? (
-            <div className="intro-markdown-with-graphs">
-              {activeItem.markdown.split(graphPlaceholder).map((part, index, arr) => (
-                <Fragment key={`volatility-part-${index}`}>
-                  {part.trim().length > 0 ? (
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{part}</ReactMarkdown>
-                  ) : null}
-                  {index < arr.length - 1 ? (
-                    <VolatilityBucketCharts variant="inline" />
-                  ) : null}
-                </Fragment>
-              ))}
-            </div>
-          ) : (
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{activeItem.markdown}</ReactMarkdown>
-          )}
-        </div>
-      ) : null}
+      <dialog ref={dialogRef} className="reference-dialog" aria-labelledby={titleId}
+        onClose={() => setActiveIndex(null)}
+        onKeyDown={(event) => {
+          if (event.key !== 'Tab') return;
+          const targets = Array.from(event.currentTarget.querySelectorAll<HTMLElement>(
+            'button, a[href], input, select, textarea, [tabindex="0"]',
+          )).filter((element) => !element.hasAttribute('disabled') && element.getClientRects().length > 0);
+          const first = targets[0];
+          const last = targets[targets.length - 1];
+          if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault(); last?.focus();
+          } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault(); first?.focus();
+          }
+        }}
+        onClick={(event) => { if (event.target === event.currentTarget) dialogRef.current?.close(); }}>
+        <article className="reference-article">
+          <header className="reference-header">
+            <div><span className="handwritten">From my notebook</span><h2 id={titleId}>{activeItem?.title}</h2></div>
+            <button type="button" className="close-button" aria-label="Close reference" autoFocus
+              onClick={() => dialogRef.current?.close()}>✕</button>
+          </header>
+          <div className="reference-body" tabIndex={0} role="region" aria-label="Reference article content">
+            {parts.map((part, index) => (
+              <Fragment key={index}>
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={{
+                  table: ({ children }) => <div className="markdown-table-scroll" tabIndex={0} role="region" aria-label="Scrollable reference table"><table>{children}</table></div>,
+                }}>{part}</ReactMarkdown>
+                {index < parts.length - 1 ? <VolatilityBucketCharts variant="inline" /> : null}
+              </Fragment>
+            ))}
+          </div>
+        </article>
+      </dialog>
     </div>
   );
 }

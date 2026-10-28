@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as echarts from 'echarts';
+import { useChartSize } from './useChartSize';
+import { buildLossProfitCurves, buildProbabilityOption } from './probabilityChart';
 import { SimulationResult } from '../sim/types';
 import { formatCurrency, formatPercent } from '../utils/format';
 
@@ -7,68 +9,11 @@ interface LossProbabilityChartProps {
   result: SimulationResult | null;
 }
 
-function buildLossProfitCurves(values: number[], steps = 40) {
-  if (values.length === 0) {
-    return { lossPoints: [], profitPoints: [], maxLoss: 1, maxProfit: 1 };
-  }
-
-  const sorted = [...values].sort((a, b) => a - b);
-  const minValue = sorted[0];
-  const maxValue = sorted[sorted.length - 1];
-  const maxLoss = Math.max(1, -minValue);
-  const maxProfit = Math.max(1, maxValue);
-  const lossStep = maxLoss / steps;
-  const profitStep = maxProfit / steps;
-
-  const lossPoints: Array<[number, number]> = [];
-  const profitPoints: Array<[number, number]> = [];
-  const total = sorted.length;
-
-  const countBelow = (limit: number) => {
-    let lo = 0;
-    let hi = sorted.length;
-    while (lo < hi) {
-      const mid = Math.floor((lo + hi) / 2);
-      if (sorted[mid] < limit) {
-        lo = mid + 1;
-      } else {
-        hi = mid;
-      }
-    }
-    return lo;
-  };
-
-  const countAtOrBelow = (limit: number) => {
-    let lo = 0;
-    let hi = sorted.length;
-    while (lo < hi) {
-      const mid = Math.floor((lo + hi) / 2);
-      if (sorted[mid] <= limit) {
-        lo = mid + 1;
-      } else {
-        hi = mid;
-      }
-    }
-    return lo;
-  };
-
-  for (let i = 0; i <= steps; i += 1) {
-    const lossThreshold = lossStep * i;
-    const profitThreshold = profitStep * i;
-    const lossCount = countBelow(-lossThreshold);
-    const profitCount = total - countAtOrBelow(profitThreshold);
-    lossPoints.push([lossThreshold, lossCount / total]);
-    profitPoints.push([profitThreshold, profitCount / total]);
-  }
-
-  return { lossPoints, profitPoints, maxLoss, maxProfit };
-}
 
 export default function LossProbabilityChart({ result }: LossProbabilityChartProps) {
-  const lossRef = useRef<HTMLDivElement>(null);
-  const profitRef = useRef<HTMLDivElement>(null);
-  const lossChartRef = useRef<echarts.EChartsType | null>(null);
-  const profitChartRef = useRef<echarts.EChartsType | null>(null);
+  const plotRef = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<echarts.EChartsType | null>(null);
+  const narrow = useChartSize(plotRef, chartRef);
   const sliderWrapRef = useRef<HTMLDivElement>(null);
   const [rangeMin, setRangeMin] = useState('-500');
   const [rangeMax, setRangeMax] = useState('250');
@@ -78,25 +23,9 @@ export default function LossProbabilityChart({ result }: LossProbabilityChartPro
   const lastResultIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!lossRef.current || !profitRef.current) {
-      return;
-    }
-    lossChartRef.current = echarts.init(lossRef.current);
-    profitChartRef.current = echarts.init(profitRef.current);
-
-    const handleResize = () => {
-      lossChartRef.current?.resize();
-      profitChartRef.current?.resize();
-    };
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      lossChartRef.current?.dispose();
-      profitChartRef.current?.dispose();
-      lossChartRef.current = null;
-      profitChartRef.current = null;
-    };
+    if (!plotRef.current) return;
+    chartRef.current = echarts.init(plotRef.current, undefined, { renderer: 'svg' });
+    return () => { chartRef.current?.dispose(); chartRef.current = null; };
   }, []);
 
   const curve = useMemo(() => {
@@ -174,22 +103,22 @@ export default function LossProbabilityChart({ result }: LossProbabilityChartPro
 
   const rangeSummary = useMemo(() => {
     if (!result) {
-      return { status: 'idle', value: 'Run a simulation to calculate.', detail: '', label: 'Calculate Range chance' };
+      return { status: 'idle', value: 'Run a simulation to calculate.', detail: '', label: 'Chance of finishing in a range' };
     }
     const total = result.runs.length;
     if (total === 0) {
-      return { status: 'idle', value: 'No runs to analyze.', detail: '', label: 'Calculate Range chance' };
+      return { status: 'idle', value: 'No runs to analyze.', detail: '', label: 'Chance of finishing in a range' };
     }
     if (!rangeMin.trim() || !rangeMax.trim()) {
-      return { status: 'invalid', value: 'Enter a valid min and max.', detail: '', label: 'Calculate Range chance' };
+      return { status: 'invalid', value: 'Enter a valid min and max.', detail: '', label: 'Chance of finishing in a range' };
     }
     const minValue = Number(rangeMin);
     const maxValue = Number(rangeMax);
     if (!Number.isFinite(minValue) || !Number.isFinite(maxValue)) {
-      return { status: 'invalid', value: 'Enter a valid min and max.', detail: '', label: 'Calculate Range chance' };
+      return { status: 'invalid', value: 'Enter a valid min and max.', detail: '', label: 'Chance of finishing in a range' };
     }
     if (minValue > maxValue) {
-      return { status: 'invalid', value: 'Min must be ≤ max.', detail: '', label: 'Calculate Range chance' };
+      return { status: 'invalid', value: 'Min must be ≤ max.', detail: '', label: 'Chance of finishing in a range' };
     }
     let count = 0;
     for (const run of result.runs) {
@@ -206,153 +135,18 @@ export default function LossProbabilityChart({ result }: LossProbabilityChartPro
   }, [result, rangeMin, rangeMax]);
 
   useEffect(() => {
-    const lossChart = lossChartRef.current;
-    const profitChart = profitChartRef.current;
-    if (!lossChart || !profitChart) {
-      return;
-    }
-
-    if (!result) {
-      lossChart.clear();
-      profitChart.clear();
-      lossChart.setOption({
-        title: {
-          text: 'P(loss) curve will appear here',
-          left: 'center',
-          top: 'middle',
-          textStyle: { color: '#7a7065', fontSize: 14 },
-        },
-        xAxis: { show: false },
-        yAxis: { show: false },
-        series: [],
-      });
-      profitChart.setOption({
-        title: {
-          text: 'P(profit) curve will appear here',
-          left: 'center',
-          top: 'middle',
-          textStyle: { color: '#7a7065', fontSize: 14 },
-        },
-        xAxis: { show: false },
-        yAxis: { show: false },
-        series: [],
-      });
-      return;
-    }
-
-    lossChart.clear();
-    profitChart.clear();
-
-    lossChart.setOption({
-      animation: false,
-      tooltip: {
-        trigger: 'axis',
-        formatter: (params: any) => {
-          const point = params[0]?.data as [number, number] | undefined;
-          if (!point) {
-            return '';
-          }
-          const threshold = formatCurrency(point[0]);
-          const probability = formatPercent(point[1]);
-          return `Loss threshold: ${threshold}<br/>Chance of losing more than that: ${probability}`;
-        },
-      },
+    const chart = chartRef.current;
+    if (!chart) return;
+    chart.clear();
+    chart.setOption(result ? buildProbabilityOption(curve, narrow) : {
       title: {
-        text: 'P(loss)',
-        left: '56%',
-        top: 8,
-        textStyle: { color: '#6b7280', fontSize: 12, fontWeight: 600 },
+        text: 'Run a simulation to explore both sides of $0',
+        left: 'center', top: 'middle',
+        textStyle: { color: '#5b6b7b', fontSize: narrow ? 10 : 13, fontWeight: 400 },
       },
-      grid: { left: 60, right: 0, top: 40, bottom: 50, containLabel: true },
-      xAxis: {
-        type: 'value',
-        name: 'Loss threshold ($)',
-        min: 0,
-        max: curve.maxLoss,
-        inverse: true,
-        nameLocation: 'middle',
-        nameGap: 32,
-        axisLabel: {
-          formatter: (value: number) => formatCurrency(value),
-        },
-      },
-      yAxis: {
-        type: 'value',
-        name: '',
-        min: 0,
-        max: 1,
-        position: 'left',
-        axisLabel: {
-          formatter: (value: number) => formatPercent(value, 0),
-        },
-      },
-      series: [
-        {
-          type: 'line',
-          data: curve.lossPoints,
-          smooth: true,
-          showSymbol: false,
-          lineStyle: { color: '#dc2626', width: 2 },
-          areaStyle: { color: 'rgba(220, 38, 38, 0.12)' },
-        },
-      ],
+      xAxis: { show: false }, yAxis: { show: false }, series: [],
     });
-
-    profitChart.setOption({
-      animation: false,
-      tooltip: {
-        trigger: 'axis',
-        formatter: (params: any) => {
-          const point = params[0]?.data as [number, number] | undefined;
-          if (!point) {
-            return '';
-          }
-          const threshold = formatCurrency(point[0]);
-          const probability = formatPercent(point[1]);
-          return `Profit threshold: ${threshold}<br/>Chance of earning more than that: ${probability}`;
-        },
-      },
-      title: {
-        text: 'P(profit)',
-        left: '44%',
-        top: 8,
-        textStyle: { color: '#6b7280', fontSize: 12, fontWeight: 600 },
-      },
-      grid: { left: 0, right: 60, top: 40, bottom: 50, containLabel: true },
-      xAxis: {
-        type: 'value',
-        name: 'Profit threshold ($)',
-        min: 0,
-        max: curve.maxProfit,
-        nameLocation: 'middle',
-        nameGap: 32,
-        axisLabel: {
-          formatter: (value: number) => formatCurrency(value),
-        },
-      },
-      yAxis: {
-        type: 'value',
-        name: '',
-        min: 0,
-        max: 1,
-        inverse: true,
-        position: 'right',
-        axisLabel: {
-          formatter: (value: number) => formatPercent(value, 0),
-        },
-      },
-      series: [
-        {
-          type: 'line',
-          data: curve.profitPoints,
-          smooth: true,
-          showSymbol: false,
-          lineStyle: { color: '#16a34a', width: 2 },
-          areaStyle: { color: 'rgba(22, 163, 74, 0.12)' },
-        },
-      ],
-    });
-  }, [result, curve]);
+  }, [result, curve, narrow]);
 
   const parsedRangeMin = Number(rangeMin);
   const parsedRangeMax = Number(rangeMax);
@@ -434,16 +228,14 @@ export default function LossProbabilityChart({ result }: LossProbabilityChartPro
 
   return (
     <div className="loss-profit-panel">
-      <div className="loss-profit-grid">
-        <div ref={lossRef} className="chart loss-probability-chart" />
-        <div ref={profitRef} className="chart profit-probability-chart" />
-      </div>
+      <div className="probability-sides" aria-hidden="true"><span>P(loss) · read the left scale</span><span>P(profit) · read the right scale</span></div>
+      <div ref={plotRef} className="chart probability-chart" role="img" aria-label="Connected P(loss) and P(profit) chart" />
       <div className="loss-profit-range">
         <div className="loss-profit-range-header">
           <div>
-            <div className="loss-profit-range-title">Calculate Range chance</div>
+            <div className="loss-profit-range-title">Chance of finishing in a range</div>
             <div className="loss-profit-range-subtitle">
-              Drag the handles or type exact values.
+              Pick two amounts below, or drag the handles to explore.
             </div>
           </div>
         </div>

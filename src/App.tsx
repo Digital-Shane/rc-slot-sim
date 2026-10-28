@@ -3,18 +3,16 @@ import TrajectoryChart from './components/TrajectoryChart';
 import HistogramChart from './components/HistogramChart';
 import LossProbabilityChart from './components/LossProbabilityChart';
 import IntroFoldoutGroup from './components/IntroFoldoutGroup';
+import InfoTip from './components/InfoTip';
 import { db, SavedSimulation } from './db';
 import { SimulationInputs, SimulationResult, Volatility } from './sim/types';
 import { formatCurrency, formatCurrencyWithCents, formatPercent } from './utils/format';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import industryIntroMarkdown from './content/intro.md?raw';
-import industryScoresMarkdown from './content/scores.md?raw';
 import industryCautionMarkdown from './content/caution.md?raw';
-import videoPokerMarkdown from './content/video-poker.md?raw';
-import volatilityMarkdown from './content/volatility.md?raw';
-import volatilityDeterminationMarkdown from './content/volatility-determination.md?raw';
-import pointStrategyMarkdown from './content/point-strategy.md?raw';
+import { guideItems } from './content/guide';
+import { notebookCopy } from './content/interface';
 
 const TARGET_POINTS = 2500;
 const POINTS_PER_DOLLAR = 1 / 5;
@@ -83,7 +81,7 @@ export default function App() {
   const [resampleSourceId, setResampleSourceId] = useState<string | null>(null);
 
   const workerRef = useRef<Worker | null>(null);
-  const trajectorySampleStepRef = useRef(TRAJECTORY_SAMPLE_STEPS[0]);
+  const trajectorySampleStepRef = useRef<(typeof TRAJECTORY_SAMPLE_STEPS)[number]>(TRAJECTORY_SAMPLE_STEPS[0]);
   const resampleSourceIdRef = useRef<string | null>(null);
 
   const trajectorySampleStep = TRAJECTORY_SAMPLE_STEPS[trajectorySampleIndex];
@@ -264,7 +262,7 @@ export default function App() {
       return nextInputs.spins_per_sec;
     }
     if (Number.isFinite(nextInputs.spins_per_min)) {
-      return nextInputs.spins_per_min / 60;
+      return nextInputs.spins_per_min! / 60;
     }
     return DEFAULT_INPUTS.spins_per_sec;
   }
@@ -495,54 +493,43 @@ export default function App() {
   }, [result, trajectorySampleStep]);
   const industryIntro = useMemo(() => industryIntroMarkdown.trim(), []);
   const industryCaution = useMemo(() => industryCautionMarkdown.trim(), []);
-  const industryScores = useMemo(() => industryScoresMarkdown.trim(), []);
-  const videoPokerNote = useMemo(() => videoPokerMarkdown.trim(), []);
-  const volatilityNote = useMemo(() => volatilityMarkdown.trim(), []);
-  const volatilityDeterminationNote = useMemo(
-    () => volatilityDeterminationMarkdown.trim(),
-    []
-  );
-  const pointStrategyNote = useMemo(() => pointStrategyMarkdown.trim(), []);
 
   return (
     <div className="app-page">
-      <div className="panel app-header fade-in">
-        <h1 className="app-title">Royal Caribbean Casino Points Simulator</h1>
-        <div className="app-intro">
-          {industryIntro ? <ReactMarkdown remarkPlugins={[remarkGfm]}>{industryIntro}</ReactMarkdown> : null}
-          {industryCaution ? (
-            <div className="notice intro-caution">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{industryCaution}</ReactMarkdown>
-            </div>
-          ) : null}
-          <IntroFoldoutGroup
-            items={[
-              { title: 'Volatility & payout logic', markdown: volatilityNote },
-              { title: 'Determining machine volatility', markdown: volatilityDeterminationNote },
-              { title: 'Video poker tradeoffs', markdown: videoPokerNote },
-              { title: 'Industry metrics', markdown: industryScores },
-              { title: 'My point strategy', markdown: pointStrategyNote },
-            ]}
-          />
+      <a className="skip-link" href="#simulation">Skip to simulation</a>
+      <header className="masthead" id="top">
+        <div className="site-identity">
+          <a className="brand" href="#top" aria-label="RC simulator home">{notebookCopy.name}</a>
+          <p className="site-description">{notebookCopy.disclaimer}</p>
         </div>
+      </header>
+      <div className="model-overview">
+      <section className="app-header fade-in" aria-label="About this simulator">
+        <div className="hero-copy">
+          <div className="model-intro"><ReactMarkdown remarkPlugins={[remarkGfm]}>{industryIntro}</ReactMarkdown></div>
+        </div>
+      </section>
+      <section className="caution-note" aria-label="Words of caution">
+        <div className="caution-copy"><ReactMarkdown remarkPlugins={[remarkGfm]}>{industryCaution}</ReactMarkdown></div>
+      </section>
       </div>
+      <section className="reference-section" id="reference" aria-labelledby="reference-heading">
+        <div className="section-heading"><h2 id="reference-heading">My notes on the simulator</h2></div>
+        <IntroFoldoutGroup items={guideItems} />
+      </section>
 
+      <section className="simulation-section" id="simulation" aria-labelledby="page-title">
+        <h1 id="page-title" className="app-title">What does a casino point <em>actually cost?</em></h1>
+        <p className="simulation-introduction">{notebookCopy.introduction}</p>
       <div className="app-shell">
-        <div className="panel controls fade-in">
+        <section className="panel controls fade-in" aria-labelledby="inputs-heading">
           <div className="section-block">
-          <div className="section-title">Simulation Inputs</div>
+          <div className="control-heading"><h2 id="inputs-heading">Try a what-if</h2><p>{notebookCopy.setupIntroduction}</p></div>
 
           <div className="input-row">
             <div className="label-row">
               <label htmlFor="rtp-range">RTP</label>
-              <span
-                className="info-tip"
-                data-tooltip="Average return per $1 coin-in. Land casinos typically return 92-97% per US regulations. Cruise ships often use lower return rates, around 85-90%."
-                aria-label="RTP range and meaning"
-                tabIndex={0}
-              >
-                i
-              </span>
+              <InfoTip label="RTP range and meaning" text="Average return per $1 coin-in. Land casinos typically return 92-97% per US regulations. Cruise ships often use lower return rates, around 85-90%." />
               <span className="label-meta">80-99.9%</span>
             </div>
             <div className="range-row">
@@ -578,14 +565,7 @@ export default function App() {
           <div className="input-row">
             <div className="label-row">
               <label htmlFor="target-points">Target RC points</label>
-              <span
-                className="info-tip"
-                data-tooltip="RC awards 1 point per $5 coin-in. Reward tiers: Prime at 2,500, Signature at 25,000, Masters at 100,000+."
-                aria-label="Target points info"
-                tabIndex={0}
-              >
-                i
-              </span>
+              <InfoTip label="Target points info" text="RC awards 1 point per $5 coin-in. Reward tiers: Prime at 2,500, Signature at 25,000, Masters at 100,000+." />
               <span className="label-meta">100-250,000</span>
             </div>
             <div className="input-inline">
@@ -618,14 +598,7 @@ export default function App() {
           <div className="input-row">
             <div className="label-row">
               <label>Machine Volatility</label>
-              <span
-                className="info-tip"
-                data-tooltip="High volatility machines include extra features beyond the base spin, like multiple bonus types that can stack or combine. Medium volatility has a single bonus feature, such as one bonus round or free spins. Low volatility has no bonus mechanics."
-                aria-label="Machine volatility help"
-                tabIndex={0}
-              >
-                i
-              </span>
+              <InfoTip label="Machine volatility help" text="High volatility machines include extra features beyond the base spin, like multiple bonus types that can stack or combine. Medium volatility has a single bonus feature, such as one bonus round or free spins. Low volatility has no bonus mechanics." />
             </div>
             <div className="pill-group" role="group" aria-label="Volatility">
               {(['LOW', 'MEDIUM', 'HIGH'] as Volatility[]).map((vol) => (
@@ -645,14 +618,7 @@ export default function App() {
           <div className="input-row">
             <div className="label-row">
               <label htmlFor="bet-size">Bet size</label>
-              <span
-                className="info-tip"
-                data-tooltip="Amount spent per spin."
-                aria-label="Bet size info"
-                tabIndex={0}
-              >
-                i
-              </span>
+              <InfoTip label="Bet size info" text="Amount spent per spin." />
               <span className="label-meta">$0.25-$1,000</span>
             </div>
             <div className="input-group">
@@ -681,14 +647,7 @@ export default function App() {
           <div className="input-row">
             <div className="label-row">
               <label htmlFor="deposit-amount">Top-up Amount</label>
-              <span
-                className="info-tip"
-                data-tooltip="Cash-in amount when the balance hits $0."
-                aria-label="Top-up info"
-                tabIndex={0}
-              >
-                i
-              </span>
+              <InfoTip label="Top-up info" text="Cash-in amount when the balance hits $0." />
               <span className="label-meta">$20-$50,000</span>
             </div>
             <div className="input-group">
@@ -719,14 +678,7 @@ export default function App() {
           <div className="input-row">
             <div className="label-row">
               <label htmlFor="spins-per-sec">Spins per second</label>
-              <span
-                className="info-tip"
-                data-tooltip={`Used for time in casino estimate. Default is 10 seconds/spin. 1 spin a second would be enough to skip the animation and view the result. Gambling addicts tend to spin 10-20 times a second.`}
-                aria-label="Spins per second info"
-                tabIndex={0}
-              >
-                i
-              </span>
+              <InfoTip label="Spins per second info" text={`Used for time in casino estimate. Default is 10 seconds/spin. 1 spin a second would be enough to skip the animation and view the result. Gambling addicts tend to spin 10-20 times a second.`} />
               <span className="label-meta">0.01-30</span>
             </div>
             <div className="input-inline">
@@ -766,14 +718,7 @@ export default function App() {
             <div className="input-row">
               <div className="label-row">
                 <label htmlFor="coin-in-per-point">Coin-in per RC point</label>
-                <span
-                  className="info-tip"
-                  data-tooltip="Slots award 1 RC point per $5 coin-in. Video poker awards 1 RC point per $10 coin-in."
-                  aria-label="Coin-in per RC point info"
-                  tabIndex={0}
-                >
-                  i
-                </span>
+                <InfoTip label="Coin-in per RC point info" text="Slots award 1 RC point per $5 coin-in. Video poker awards 1 RC point per $10 coin-in." />
                 <span className="label-meta">5-10</span>
               </div>
               <input
@@ -798,14 +743,7 @@ export default function App() {
             <div className="input-row">
               <div className="label-row">
                 <label htmlFor="runs">Runs per simulation</label>
-                <span
-                  className="info-tip"
-                  data-tooltip="Number of runs per simulation."
-                  aria-label="Runs per simulation info"
-                  tabIndex={0}
-                >
-                  i
-                </span>
+                <InfoTip label="Runs per simulation info" text="Number of runs per simulation." />
                 <span className="label-meta">100-100,000</span>
               </div>
               <input
@@ -830,14 +768,7 @@ export default function App() {
             <div className="input-row">
               <div className="label-row">
                 <label htmlFor="seed">Seed (optional)</label>
-                <span
-                  className="info-tip"
-                  data-tooltip="Reproducible runs."
-                  aria-label="Seed info"
-                  tabIndex={0}
-                >
-                  i
-                </span>
+                <InfoTip label="Seed info" text="Reproducible runs." />
               </div>
               <input
                 id="seed"
@@ -849,14 +780,7 @@ export default function App() {
             <div className="input-row">
               <div className="label-row">
                 <label htmlFor="traj-points">Trajectory points</label>
-                <span
-                  className="info-tip"
-                  data-tooltip="Line resolution for trajectories."
-                  aria-label="Trajectory points info"
-                  tabIndex={0}
-                >
-                  i
-                </span>
+                <InfoTip label="Trajectory points info" text="Line resolution for trajectories." />
                 <span className="label-meta">100-1,000</span>
               </div>
               <input
@@ -884,7 +808,7 @@ export default function App() {
         </div>
 
         <div className="section-block">
-          <div className="section-title">Run simulation</div>
+          <div className="section-title">See how it plays out</div>
           <div className="split input-row">
             <button className="button" onClick={handleRun} disabled={running}>
               Run simulation
@@ -894,9 +818,9 @@ export default function App() {
             </button>
           </div>
 
-          <div className="progress">
-            <span>{running ? 'Running' : 'Idle'}</span>
-            <progress max={progress.total || 1} value={progress.completed} />
+          <div className="progress" role="status" aria-live="polite">
+            <span>{running ? 'Running' : result ? 'Complete' : 'Ready'}</span>
+            <progress aria-label="Simulation progress" max={progress.total || 1} value={progress.completed} />
             <span>
               {progress.completed}/{progress.total || inputs.runs}
             </span>
@@ -908,11 +832,13 @@ export default function App() {
           {runtimeWarning && (
             <div className="notice warning">Warning: bet size implies &gt; 50,000 spins/run.</div>
           )}
-          {error && <div className="notice error">{error}</div>}
+          {error && <div className="notice error" role="alert">{error}</div>}
         </div>
 
+        <details className="saved-section" open>
+        <summary>Saved simulations <span>{saved.length} saved locally</span></summary>
         <div className="section-block">
-          <div className="section-title">Save and Share</div>
+          <div className="section-title">Save and share</div>
           <div className="input-row">
             <div className="label-row">
               <label htmlFor="save-name">Save name</label>
@@ -933,13 +859,13 @@ export default function App() {
             <button className="button ghost" onClick={handleExport} disabled={!result}>
               Export JSON
             </button>
-            <label className="button ghost">
+            <label className="button ghost import-button">
               Import JSON
               <input
+                aria-label="Import JSON"
                 type="file"
                 accept="application/json"
                 onChange={handleImport}
-                style={{ display: 'none' }}
               />
             </label>
           </div>
@@ -968,14 +894,16 @@ export default function App() {
           </div>
         </div>
 
-        <div className="note">
+        </details>
+        <div className="note model-note">
           Results are illustrative and depend on the selected RTP and volatility model.
         </div>
-      </div>
+      </section>
 
-      <div className="chart-stack">
+      <section className="chart-stack" id="results" aria-labelledby="results-heading">
+        <div className="section-heading results-heading"><div><h2 id="results-heading">What might happen?</h2><p>{notebookCopy.resultsIntroduction}</p></div><span className={`result-status${running ? ' is-running' : ''}`}>{running ? 'Simulating…' : result ? `${result.inputs.runs.toLocaleString()} runs complete` : 'Your results will show up here'}</span></div>
         <div className="panel snapshot-panel">
-          <div className="section-title">Run snapshot</div>
+          <div className="section-title">Run snapshot <span className="snapshot-caption">{result ? 'Inputs used for these results' : 'Your completed run will appear here'}</span></div>
           <div className="kv snapshot">
             <div>
               Runs
@@ -1013,7 +941,7 @@ export default function App() {
         </div>
 
         <div className="panel trajectory-panel">
-          <div className="section-title chart-header">Trajectory (Net vs Coin-in)</div>
+          <h3 className="section-title chart-header">A few possible paths <span className="chart-subtitle">{notebookCopy.pathsIntroduction}</span></h3>
           <div className="chart-slot">
             <TrajectoryChart
               result={result}
@@ -1082,7 +1010,7 @@ export default function App() {
         </div>
 
         <div className="panel">
-          <div className="section-title">Distribution + Summary</div>
+          <h3 className="section-title">Where the runs ended <span className="chart-subtitle">{notebookCopy.distributionIntroduction}</span></h3>
           <div className="summary-grid">
             <div className="histogram-wrap">
               <HistogramChart result={result} />
@@ -1091,45 +1019,24 @@ export default function App() {
               {!summary && <div className="note">Run a simulation to see metrics.</div>}
               {summary && (
                 <div className="kv metrics">
-                  <div>
+                  <div className="primary-metric">
                     <div className="metric-label">
                       <span>Median final net</span>
-                      <span
-                        className="info-tip"
-                        data-tooltip="Middle final net across all runs (50% above, 50% below). Final net equals total payout minus total coin-in."
-                        aria-label="Median final net info"
-                        tabIndex={0}
-                      >
-                        i
-                      </span>
+                      <InfoTip label="Median final net info" text="Middle final net across all runs (50% above, 50% below). Final net equals total payout minus total coin-in." />
                     </div>
                     <strong>{formatCurrency(summary.final_net.median)}</strong>
                   </div>
-                  <div>
+                  <div className="primary-metric">
                     <div className="metric-label">
                       <span>Mean final net</span>
-                      <span
-                        className="info-tip"
-                        data-tooltip="Average final net across all runs. This is sensitive to rare big wins or losses."
-                        aria-label="Mean final net info"
-                        tabIndex={0}
-                      >
-                        i
-                      </span>
+                      <InfoTip label="Mean final net info" text="Average final net across all runs. This is sensitive to rare big wins or losses." />
                     </div>
                     <strong>{formatCurrency(summary.final_net.mean)}</strong>
                   </div>
                   <div>
                     <div className="metric-label">
                       <span>P10 / P90</span>
-                      <span
-                        className="info-tip"
-                        data-tooltip="10th and 90th percentile final net values. 80% of outcomes fall between these two numbers."
-                        aria-label="P10 and P90 info"
-                        tabIndex={0}
-                      >
-                        i
-                      </span>
+                      <InfoTip label="P10 and P90 info" text="10th and 90th percentile final net values. 80% of outcomes fall between these two numbers." />
                     </div>
                     <strong>
                       {formatCurrency(summary.final_net.p10)} / {formatCurrency(summary.final_net.p90)}
@@ -1138,14 +1045,7 @@ export default function App() {
                   <div>
                     <div className="metric-label">
                       <span>Worst / Best</span>
-                      <span
-                        className="info-tip"
-                        data-tooltip="Lowest and highest final net observed across all runs."
-                        aria-label="Worst and best info"
-                        tabIndex={0}
-                      >
-                        i
-                      </span>
+                      <InfoTip label="Worst and best info" text="Lowest and highest final net observed across all runs." />
                     </div>
                     <strong>
                       {formatCurrency(summary.final_net.min)} / {formatCurrency(summary.final_net.max)}
@@ -1154,42 +1054,21 @@ export default function App() {
                   <div>
                     <div className="metric-label">
                       <span>Total cash in (median)</span>
-                      <span
-                        className="info-tip"
-                        data-tooltip="Median total cash-in across runs. Cash-in is the sum of top-ups when the balance hits $0."
-                        aria-label="Median total cash in info"
-                        tabIndex={0}
-                      >
-                        i
-                      </span>
+                      <InfoTip label="Median total cash in info" text="Median total cash-in across runs. Cash-in is the sum of top-ups when the balance hits $0." />
                     </div>
                     <strong>{formatCurrency(summary.cash_in.median)}</strong>
                   </div>
                   <div>
                     <div className="metric-label">
                       <span>Ending balance (median)</span>
-                      <span
-                        className="info-tip"
-                        data-tooltip="Median ending balance after reaching the coin-in target."
-                        aria-label="Median ending balance info"
-                        tabIndex={0}
-                      >
-                        i
-                      </span>
+                      <InfoTip label="Median ending balance info" text="Median ending balance after reaching the coin-in target." />
                     </div>
                     <strong>{formatCurrency(summary.ending_balance.median)}</strong>
                   </div>
                   <div>
                     <div className="metric-label">
                       <span>Spins/Run</span>
-                      <span
-                        className="info-tip"
-                        data-tooltip="Number of spins needed to reach the coin-in target."
-                        aria-label="Spins per run info"
-                        tabIndex={0}
-                      >
-                        i
-                      </span>
+                      <InfoTip label="Spins per run info" text="Number of spins needed to reach the coin-in target." />
                     </div>
                     <strong>
                       {medianSpinsPerRun === null ? '-' : medianSpinsPerRun.toLocaleString()}
@@ -1198,14 +1077,7 @@ export default function App() {
                   <div>
                     <div className="metric-label">
                       <span>Time in casino</span>
-                      <span
-                        className="info-tip"
-                        data-tooltip="Estimated real time for a typical run based on median spins and the configured spins per second."
-                        aria-label="Time in casino info"
-                        tabIndex={0}
-                      >
-                        i
-                      </span>
+                      <InfoTip label="Time in casino info" text="Estimated real time for a typical run based on median spins and the configured spins per second." />
                     </div>
                     <strong>
                       {timeInCasinoMinutes === null ? '-' : formatDuration(timeInCasinoMinutes)}
@@ -1214,56 +1086,28 @@ export default function App() {
                   <div>
                     <div className="metric-label">
                       <span>CVaR 5%</span>
-                      <span
-                        className="info-tip"
-                        data-tooltip="Average of the worst 5% final net outcomes. A tail-risk measure for bad runs."
-                        aria-label="CVaR 5% info"
-                        tabIndex={0}
-                      >
-                        i
-                      </span>
+                      <InfoTip label="CVaR 5% info" text="Average of the worst 5% final net outcomes. A tail-risk measure for bad runs." />
                     </div>
                     <strong>{formatCurrency(summary.final_net.cvar_5)}</strong>
                   </div>
                   <div>
                     <div className="metric-label">
                       <span>CVaR 1%</span>
-                      <span
-                        className="info-tip"
-                        data-tooltip="Average of the worst 1% final net outcomes. This highlights extreme downside risk."
-                        aria-label="CVaR 1% info"
-                        tabIndex={0}
-                      >
-                        i
-                      </span>
+                      <InfoTip label="CVaR 1% info" text="Average of the worst 1% final net outcomes. This highlights extreme downside risk." />
                     </div>
                     <strong>{formatCurrency(summary.final_net.cvar_1)}</strong>
                   </div>
                   <div>
                     <div className="metric-label">
                       <span>Drawdown (mean)</span>
-                      <span
-                        className="info-tip"
-                        data-tooltip="Average maximum drawdown across runs. Drawdown is the peak-to-trough drop in net during a run."
-                        aria-label="Mean drawdown info"
-                        tabIndex={0}
-                      >
-                        i
-                      </span>
+                      <InfoTip label="Mean drawdown info" text="Average maximum drawdown across runs. Drawdown is the peak-to-trough drop in net during a run." />
                     </div>
                     <strong>{formatCurrency(summary.max_drawdown.mean)}</strong>
                   </div>
                   <div>
                     <div className="metric-label">
                       <span>Drawdown (p95)</span>
-                      <span
-                        className="info-tip"
-                        data-tooltip="95th percentile of maximum drawdown. Only 5% of runs experience a larger peak-to-trough drop."
-                        aria-label="P95 drawdown info"
-                        tabIndex={0}
-                      >
-                        i
-                      </span>
+                      <InfoTip label="P95 drawdown info" text="95th percentile of maximum drawdown. Only 5% of runs experience a larger peak-to-trough drop." />
                     </div>
                     <strong>{formatCurrency(summary.max_drawdown.p95)}</strong>
                   </div>
@@ -1273,25 +1117,21 @@ export default function App() {
           </div>
         </div>
 
-        <div className="panel">
-          <div className="section-title chart-header">
+        <div className="panel probability-panel">
+          <h3 className="section-title chart-header">
             P(loss) and P(profit)
-            <span
-              className="info-tip"
-              data-tooltip="P(loss) shows the share of runs ending below a loss threshold. P(profit) shows the share ending above a profit threshold."
-              aria-label="Probability charts info"
-              tabIndex={0}
-            >
-              i
-            </span>
-          </div>
+            <InfoTip label="Probability charts info" text="P(loss) shows the share of runs ending below a loss threshold. P(profit) shows the share ending above a profit threshold." />
+          </h3>
+          <p className="chart-explainer">{notebookCopy.probabilityIntroduction}</p>
           <div className="chart-slot loss-profit-slot">
             <LossProbabilityChart result={result} />
           </div>
         </div>
 
-      </div>
+      </section>
     </div>
+    </section>
+    <footer className="app-footer"><span>{notebookCopy.name}</span><span>Independent simulator. Results are illustrative.</span><a href="#top">Back to top ↑</a></footer>
     </div>
   );
 }

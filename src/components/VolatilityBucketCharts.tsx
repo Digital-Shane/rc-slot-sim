@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import * as echarts from 'echarts';
+import { useChartSize } from './useChartSize';
 import { VOLATILITY_TEMPLATES } from '../sim/volatilityModel';
 
 const TIERS = [
@@ -73,6 +74,7 @@ function formatProbabilityLabel(p: number) {
 function useEChart(options: echarts.EChartsOption) {
   const chartRef = useRef<HTMLDivElement>(null);
   const instanceRef = useRef<echarts.EChartsType | null>(null);
+  const narrow = useChartSize(chartRef, instanceRef);
 
   useEffect(() => {
     if (!chartRef.current) {
@@ -97,7 +99,11 @@ function useEChart(options: echarts.EChartsOption) {
       return;
     }
     instanceRef.current.setOption(options);
-  }, [options]);
+    instanceRef.current.setOption({
+      grid: { left: narrow ? 8 : 72, right: narrow ? 12 : 30, top: 35, bottom: 55, containLabel: true },
+      yAxis: { name: narrow ? '' : 'Bucket probability' },
+    });
+  }, [options, narrow]);
 
   return chartRef;
 }
@@ -120,7 +126,7 @@ function DensityOverlayChart({ tiers }: { tiers: TierData[] }) {
     useMemo(() => {
       const minX = Math.min(...tiers.map((tier) => tier.buckets[0]?.[0] ?? 0.1));
       const maxX = 20000;
-      const bucketCount = 120;
+      const bucketCount: number = 120;
       const logMin = Math.log(minX);
       const logMax = Math.log(maxX);
       const sharedMultipliers = Array.from({ length: bucketCount }, (_, index) => {
@@ -179,6 +185,7 @@ function DensityOverlayChart({ tiers }: { tiers: TierData[] }) {
         grid: { left: 72, right: 30, top: 30, bottom: 50, containLabel: true },
         tooltip: {
           trigger: 'axis',
+          confine: true,
           axisPointer: { type: 'line', snap: true },
           formatter: (params: any) => {
             if (!params?.length) {

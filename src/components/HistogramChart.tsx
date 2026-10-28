@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import * as echarts from 'echarts';
+import { useChartSize } from './useChartSize';
 import { SimulationResult } from '../sim/types';
 import { formatCurrency } from '../utils/format';
 
@@ -34,6 +35,7 @@ function buildHistogram(values: number[], bins = 30) {
 export default function HistogramChart({ result }: HistogramChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<echarts.EChartsType | null>(null);
+  const narrow = useChartSize(containerRef, chartRef);
 
   useEffect(() => {
     if (!containerRef.current) {
@@ -74,7 +76,7 @@ export default function HistogramChart({ result }: HistogramChartProps) {
           text: 'Final net distribution will appear here',
           left: 'center',
           top: 'middle',
-          textStyle: { color: '#7a7065', fontSize: 14 },
+          textStyle: { color: '#536b7e', fontSize: narrow ? 11 : 13 },
         },
         xAxis: { show: false },
         yAxis: { show: false },
@@ -96,6 +98,7 @@ export default function HistogramChart({ result }: HistogramChartProps) {
       title: undefined,
       tooltip: {
         trigger: 'axis',
+        confine: true,
         axisPointer: { type: 'shadow' },
         formatter: (params: any) => {
           const bin = params[0]?.data;
@@ -105,10 +108,13 @@ export default function HistogramChart({ result }: HistogramChartProps) {
           return `Final net: ${formatCurrency(bin[0])}<br/>Runs: ${bin[1]}`;
         },
       },
-      grid: { left: 50, right: 60, top: 30, bottom: 50, containLabel: true },
+      grid: { left: narrow ? 8 : 40, right: narrow ? 18 : 40, top: 35, bottom: 50, containLabel: true },
       xAxis: {
         type: 'value',
         name: 'Final net ($)',
+        nameLocation: 'middle',
+        nameGap: 32,
+        splitNumber: narrow ? 3 : 5,
         min: xMin,
         max: xMax,
         axisLabel: {
@@ -123,11 +129,11 @@ export default function HistogramChart({ result }: HistogramChartProps) {
         {
           type: 'bar',
           data,
-          itemStyle: { color: '#d97706' },
+          itemStyle: { color: '#138b80', borderRadius: [3, 3, 0, 0] },
           barWidth: 12,
           markLine: {
             symbol: ['none', 'none'],
-            label: { formatter: '{b}', position: 'insideEndTop' },
+            label: { show: false },
             data: [
               { name: 'Mean', xAxis: mean, lineStyle: { color: '#0f766e' } },
               { name: 'Median', xAxis: median, lineStyle: { color: '#2563eb' } },
@@ -137,7 +143,14 @@ export default function HistogramChart({ result }: HistogramChartProps) {
         },
       ],
     });
-  }, [result, histogram]);
+  }, [result, histogram, narrow]);
 
-  return <div ref={containerRef} className="chart histogram-chart" />;
+  return (
+    <div className="histogram-view">
+      <div ref={containerRef} className="chart histogram-chart" />
+      {result && <div className="histogram-key" aria-label="Distribution markers">
+        <span className="mean">Mean</span><span className="median">Median</span><span className="break-even">Break-even</span>
+      </div>}
+    </div>
+  );
 }

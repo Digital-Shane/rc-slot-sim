@@ -1,6 +1,6 @@
 This page details my strategy for optimizing the RC casino rewards point system by engineering the specific signals that casino marketing models actually use. *Details in "Industry Metrics" section.* The goal is to generate the appearance of a consistently high value player while tightly controlling expected loss. By carefully managing daily point targets, rated days, and trip timing, the strategy focuses on maximizing recency, frequency, and average theoretical value in order to sustain premium offers with the minimum necessary play.
 
-This strategy was written **January 2026**, and will go into action April of the same year. I will update this page with resulting reward offers over the course of the next two years. 
+This strategy was written **January 2026**, and will go into action April of the same year. **October 2026** I’ve taken seven cheap cruises this year already. I get so many cruise offers for only taxes and port fees I could never use them all. You just need to be flexible about the ports you sail from and the destinations. 
 
 #### The First Cruise
 
@@ -25,6 +25,6 @@ profile for me given the potential rewards.
 
 On any free cruises taken the goal is to maintain high value player status while spending the minimum required to trigger industry models.
 
-* Aim for 100-250 points total
+* Aim for 350 points total
 * 1-2 trips per cruise, spreading out play
 * Ensure that each cruise has at least one day of meaningful tracked play

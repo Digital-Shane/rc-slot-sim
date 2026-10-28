@@ -1,0 +1,53 @@
+[
+  {
+    "volatility": "LOW",
+    "inputs": {
+      "rtp_percent": 88,
+      "volatility": "LOW",
+      "bet_size": 1.5,
+      "deposit_amount": 100,
+      "target_points": 100,
+      "points_per_dollar": 0.2,
+      "coin_in_target": 500,
+      "runs": 100,
+      "seed": "redesign-regression",
+      "spins_per_sec": 0.1,
+      "traj_points": 100
+    },
+    "sha256": "a3ace995083e3eec5ee74eaf4f987493372608f240fc8a7907a577ee9e3a4f14"
+  },
+  {
+    "volatility": "MEDIUM",
+    "inputs": {
+      "rtp_percent": 88,
+      "volatility": "MEDIUM",
+      "bet_size": 1.5,
+      "deposit_amount": 100,
+      "target_points": 100,
+      "points_per_dollar": 0.2,
+      "coin_in_target": 500,
+      "runs": 100,
+      "seed": "redesign-regression",
+      "spins_per_sec": 0.1,
+      "traj_points": 100
+    },
+    "sha256": "2abe6e9a2e86b930f34d387b00ec892f3be60c788cda01898e8c9d01550c4ff1"
+  },
+  {
+    "volatility": "HIGH",
+    "inputs": {
+      "rtp_percent": 88,
+      "volatility": "HIGH",
+      "bet_size": 1.5,
+      "deposit_amount": 100,
+      "target_points": 100,
+      "points_per_dollar": 0.2,
+      "coin_in_target": 500,
+      "runs": 100,
+      "seed": "redesign-regression",
+      "spins_per_sec": 0.1,
+      "traj_points": 100
+    },
+    "sha256": "16d3e3304ebad9151c6688c3a9315a8e00bc1e5c5d52bf46b76b4746f8685ecc"
+  }
+]
