@@ -60,7 +60,8 @@ npm run preview
 ## GitHub Pages
 - The workflow in `.github/workflows/deploy-pages.yml` builds and deploys on pushes to `main`.
 - In the repo Settings → Pages, set Source to "GitHub Actions".
-- The base path auto-detects the repo name in GitHub Actions; override with `VITE_BASE` if you need a custom path.
+- Production defaults to `/` for `https://rccasinopointsim.com/`, including in GitHub Actions. The repository name does not change the URL base. Set `VITE_BASE=/your-subdirectory/` (or `BASE_URL`) only when intentionally hosting beneath a subdirectory; `VITE_BASE=/` keeps root hosting.
+- Base-path regression check: `node --import tsx tests/vite-base-regression.mts`.
 
 ## Notes
 - Results are illustrative; they depend on the selected RTP and volatility model.

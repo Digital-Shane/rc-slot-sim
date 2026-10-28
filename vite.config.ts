@@ -6,8 +6,8 @@ export default defineConfig(({ mode }) => {
     /^\/|\/$/g,
     '',
   );
-  const repoName = process.env.GITHUB_REPOSITORY?.split('/')[1];
-  const base = mode === 'production' ? `/${baseOverride || repoName || 'casino-sim'}/` : '/';
+  // The custom domain serves the app at /, not under the GitHub repository name.
+  const base = mode === 'production' && baseOverride ? `/${baseOverride}/` : '/';
 
   return {
     base,
